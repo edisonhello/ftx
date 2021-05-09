@@ -93,6 +93,7 @@ http::response<http::string_body> HTTPSession::request(
     return response;
 }
 
+#undef string_to_hex // avoid define pollusion to OPENSSL_hexstr2buf
 void HTTPSession::authenticate(http::request<http::string_body>& req)
 {
 
@@ -110,7 +111,7 @@ void HTTPSession::authenticate(http::request<http::string_body>& req)
       encoding::string_to_hex((unsigned char*)hmacced.c_str(), 32);
 
     req.set("FTX-KEY", api_key);
-    req.set("FTX-TS", ts);
+    req.set("FTX-TS", std::to_string(ts));
     req.set("FTX-SIGN", sign);
     if (!subaccount_name.empty()) {
         req.set("FTX-SUBACCOUNT", subaccount_name);
