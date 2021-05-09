@@ -1,13 +1,19 @@
-# FTX Sample Code
+## Setup cmake
+```bash
+mkdir bin
+cd bin
+cmake ..
+```
 
-[FTX](https://ftx.com/) is a cryptocurrency derivatives exchange.
+## Buid
+```bash
+make
+```
 
-You can find the REST API docs [here](https://ftx1.docs.apiary.io), websocket API docs [here](https://ftxwebsocket.docs.apiary.io), and FIX docs [here](https://docs.ftx.com/#fix-api).
-
-You can create API keys on your [profile page](https://ftx.com/profile).
-
-FTX is integrated with CCXT here:
-- https://github.com/ccxt/ccxt/blob/master/js/ftx.js
-- https://github.com/ccxt/ccxt/blob/master/python/ccxt/ftx.py
-- https://github.com/ccxt/ccxt/blob/master/python/ccxt/async_support/ftx.py
-- https://github.com/ccxt/ccxt/blob/master/php/ftx.php
+## Run
+1. Add your API keys to the clients
+2. Run the examples:
+```bash
+./src/example/rest_test
+./src/example/ws_test
+```
