@@ -4,7 +4,22 @@ namespace ftx {
 
 RESTClient::RESTClient()
 {
+    if (!api_key.empty()) {
+        configure();
+    }
+}
+
+void RESTClient::set_keys(const std::string api_key, const std::string api_secret, const std::string subaccount_name) {
+    this->api_key = api_key;
+    this->api_secret = api_secret;
+    this->subaccount_name = subaccount_name;
+
+    configure();
+}
+
+void RESTClient::configure() {
     http_client.configure(uri, api_key, api_secret, subaccount_name);
+    configured = true;
 }
 
 json RESTClient::list_futures()

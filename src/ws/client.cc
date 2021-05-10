@@ -9,8 +9,24 @@ namespace ftx {
 
 WSClient::WSClient()
 {
+    if (!api_key.empty()) {
+        configure();
+    } 
+}
+
+void WSClient::set_keys(const std::string api_key, const std::string api_secret, const std::string subaccount_name) {
+    this->api_key = api_key;
+    this->api_secret = api_secret;
+    this->subaccount_name = subaccount_name;
+
+    configure();
+}
+
+void WSClient::configure() {
     ws.configure(uri, api_key, api_secret, subaccount_name);
     ws.set_on_open_cb([this]() { return this->on_open(); });
+
+    configured = true;
 }
 
 void WSClient::on_message(util::WS::OnMessageCB cb)

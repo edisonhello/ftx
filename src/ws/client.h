@@ -14,6 +14,9 @@ class WSClient
   public:
     WSClient();
 
+    void set_keys(const std::string api_key, const std::string api_secret, const std::string subaccount_name = "");
+    void configure();
+
     void on_message(util::WS::OnMessageCB cb);
     void connect();
     std::vector<json> on_open();
@@ -29,9 +32,11 @@ class WSClient
     util::WS::OnMessageCB message_cb;
     util::WS ws;
     const std::string uri = "wss://ftx.com/ws/";
-    const std::string api_key = "";
-    const std::string api_secret = "";
-    const std::string subaccount_name = "";
+    std::string api_key = "";
+    std::string api_secret = "";
+    std::string subaccount_name = "";
+
+    bool configured = false;
 };
 
 }

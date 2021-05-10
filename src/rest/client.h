@@ -13,6 +13,10 @@ class RESTClient
   public:
     RESTClient();
 
+    void set_keys(const std::string api_key, const std::string api_secret, const std::string subaccount_name = "");
+
+    void configure();
+
     json list_futures();
 
     json list_markets();
@@ -52,9 +56,11 @@ class RESTClient
   private:
     util::HTTPSession http_client;
     const std::string uri = "ftx.com";
-    const std::string api_key = "";
-    const std::string api_secret = "";
-    const std::string subaccount_name = "";
+    std::string api_key = "";
+    std::string api_secret = "";
+    std::string subaccount_name = "";
+
+    bool configured = false;
 };
 
 }
