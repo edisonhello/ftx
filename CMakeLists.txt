@@ -20,4 +20,6 @@ include_directories(SYSTEM src/external)
 add_subdirectory(src/rest)
 add_subdirectory(src/ws)
 add_subdirectory(src/util)
+add_subdirectory(src/chase_and_make)
+
 add_subdirectory(src/example)

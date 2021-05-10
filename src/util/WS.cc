@@ -10,11 +10,12 @@ WS::WS()
     wsclient.init_asio();
 
     wsclient.set_open_handler([this](websocketpp::connection_hdl hdl) {
-        auto subscriptions = on_open_cb();
-        for (auto& subscription : subscriptions) {
-            wsclient.send(
-              hdl, subscription.dump(), websocketpp::frame::opcode::text);
-        }
+      this->hdl = std::move(hdl);
+
+      auto subscriptions = on_open_cb();
+      for (auto& subscription : subscriptions) {
+        this->send_message(subscription.dump());
+      }
     });
 
     wsclient.set_message_handler(
@@ -23,15 +24,15 @@ WS::WS()
           on_message_cb(j);
       });
 
-    wsclient.set_close_handler([this](websocketpp::connection_hdl) {
+    wsclient.set_close_handler([](websocketpp::connection_hdl) {
         std::cout << "connection closed";
     });
 
     wsclient.set_interrupt_handler(
-      [this](websocketpp::connection_hdl) { throw "Interrupt handler"; });
+      [](websocketpp::connection_hdl) { throw "Interrupt handler"; });
 
     wsclient.set_fail_handler(
-      [this](websocketpp::connection_hdl) { throw "Fail handler"; });
+      [](websocketpp::connection_hdl) { throw "Fail handler"; });
 
     wsclient.set_tls_init_handler([](websocketpp::connection_hdl) {
         return websocketpp::lib::make_shared<boost::asio::ssl::context>(
@@ -69,8 +70,19 @@ void WS::connect()
           "Could not create connection because: " + ec.message() + "\n";
         throw err;
     }
+    std::cout << "a" << std::endl;
     wsclient.connect(connection);
-    wsclient.run();
+    std::cout << "a" << std::endl;
+    std::thread([this] () { wsclient.run(); }).detach();
+    std::cout << "a" << std::endl;
+}
+
+void WS::send_message(const std::string message) {
+  // connection->send(message);
+  std::cout << "sending message " << message << std::endl;
+            wsclient.send(
+              hdl, message, websocketpp::frame::opcode::text);
+  std::cout << "sending message " << "finish" << std::endl;
 }
 
 }

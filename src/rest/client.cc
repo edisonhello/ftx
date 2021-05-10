@@ -2,11 +2,34 @@
 
 namespace ftx {
 
+Order::Order(json j)
+    : id(j["id"]), market(j["market"]), type(j["type"]), side(j["side"]),
+      price(j["price"].get<std::string>()), size(j["size"].get<std::string>()),
+      filled_size(j["filledSize"].get<std::string>()),
+      remaining_size(j["remainingSize"].get<std::string>()),
+      avg_fill_price(j["avgFillPrice"].get<std::string>()),
+      created_at(j["createdAt"].get<std::string>()),
+      reduce_only(j["reduceOnly"].get<bool>()), ioc(j["ioc"].get<bool>()),
+      post_only(j["postOnly"].get<bool>()),
+      clientid(j["clientid"].get<bool>()) {
+  std::string strStatus = j["status"];
+  if (strStatus == "new")
+    status = OrderStatus::_new;
+  if (strStatus == "open")
+    status = OrderStatus::opened;
+  if (strStatus == "closed")
+    status = OrderStatus::closed;
+}
+
 RESTClient::RESTClient()
 {
     if (!api_key.empty()) {
         configure();
     }
+}
+
+RESTClient::RESTClient(const std::string api_key, const std::string api_secret, const std::string subaccount_name) {
+    set_keys(api_key, api_secret, subaccount_name);
 }
 
 void RESTClient::set_keys(const std::string api_key, const std::string api_secret, const std::string subaccount_name) {
@@ -59,7 +82,7 @@ json RESTClient::get_open_orders()
     return json::parse(response.body());
 }
 
-json RESTClient::place_order(const std::string market,
+Order RESTClient::place_order(const std::string market,
                              const std::string side,
                              double price,
                              double size,
@@ -79,7 +102,7 @@ json RESTClient::place_order(const std::string market,
     return json::parse(response.body());
 }
 
-json RESTClient::place_order(const std::string market,
+Order RESTClient::place_order(const std::string market,
                              const std::string side,
                              double size,
                              bool ioc,
@@ -95,6 +118,11 @@ json RESTClient::place_order(const std::string market,
                     {"postOnly", post_only},
                     {"reduceOnly", reduce_only}};
     auto response = http_client.post("orders", payload.dump());
+    return json::parse(response.body());
+}
+
+Order RESTClient::get_order_status(const std::string order_id) {
+    auto response = http_client.get("orders/" + order_id);
     return json::parse(response.body());
 }
 

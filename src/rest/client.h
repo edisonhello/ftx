@@ -1,17 +1,51 @@
 #pragma once
 
-#include "util/HTTP.h"
-#include <external/json.hpp>
 #include <string>
 
+#include <boost/multiprecision/cpp_dec_float.hpp>
+
+#include <external/json.hpp>
+#include "util/HTTP.h"
+
 using json = nlohmann::json;
+using float50 = boost::multiprecision::cpp_dec_float_50;
+using string = std::string;
 
 namespace ftx {
+
+enum OrderStatus {
+  _new,
+  opened,
+  closed,
+};
+
+struct Order {
+  int id;
+  string market;
+  string type;
+  string side;
+  float50 price;
+  float50 size;
+  float50 filled_size;
+  float50 remaining_size;
+  float50 avg_fill_price;
+  OrderStatus status;
+  string created_at;
+  bool reduce_only;
+  bool ioc;
+  bool post_only;
+  bool clientid;
+
+  Order() = default;
+  Order(json j);
+};
+
 
 class RESTClient
 {
   public:
     RESTClient();
+    RESTClient(const std::string api_key, const std::string api_secret, const std::string subaccount_name = "");
 
     void set_keys(const std::string api_key, const std::string api_secret, const std::string subaccount_name = "");
 
@@ -29,7 +63,7 @@ class RESTClient
 
     json get_open_orders();
 
-    json place_order(const std::string market,
+    Order place_order(const std::string market,
                      const std::string side,
                      double price,
                      double size,
@@ -38,12 +72,14 @@ class RESTClient
                      bool reduce_only = false);
 
     // Market order overload
-    json place_order(const std::string market,
+    Order place_order(const std::string market,
                      const std::string side,
                      double size,
                      bool ioc = false,
                      bool post_only = false,
                      bool reduce_only = false);
+
+    Order get_order_status(const std::string order_id);
 
     json cancel_order(const std::string order_id);
 

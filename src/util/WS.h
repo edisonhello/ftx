@@ -4,8 +4,10 @@
 #include <functional>
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_client.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
 
 using json = nlohmann::json;
+using boost::multiprecision::cpp_dec_float_50;
 
 namespace util {
 
@@ -24,10 +26,12 @@ class WS
     void set_on_open_cb(OnOpenCB open_cb);
     void set_on_message_cb(OnMessageCB message_cb);
     void connect();
+    void send_message(const std::string message);
 
   private:
     WSClient wsclient;
     WSClient::connection_ptr connection;
+    websocketpp::connection_hdl hdl;
     OnOpenCB on_open_cb;
     OnMessageCB on_message_cb;
     std::string uri;
