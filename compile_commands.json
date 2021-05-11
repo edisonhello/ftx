@@ -43,10 +43,5 @@
   "directory": "/home/edison/Coding/ftx_cpp/bin/src/example",
   "command": "/usr/bin/c++  -I/home/edison/Coding/ftx_cpp/src -isystem /home/edison/Coding/ftx_cpp/src/external -Wall -Werror -Wfatal-errors -Wpedantic -Wextra -Wmissing-include-dirs -Wconversion -Wsign-conversion -pthread -Wall -Werror -Wfatal-errors -Wpedantic -Wextra -Wmissing-include-dirs -Wconversion -Wsign-conversion -pthread -std=gnu++17 -o CMakeFiles/ws_test.dir/ws_test.cc.o -c /home/edison/Coding/ftx_cpp/src/example/ws_test.cc",
   "file": "/home/edison/Coding/ftx_cpp/src/example/ws_test.cc"
-},
-{
-  "directory": "/home/edison/Coding/ftx_cpp/bin/src/example",
-  "command": "/usr/bin/c++  -I/home/edison/Coding/ftx_cpp/src -isystem /home/edison/Coding/ftx_cpp/src/external -Wall -Werror -Wfatal-errors -Wpedantic -Wextra -Wmissing-include-dirs -Wconversion -Wsign-conversion -pthread -Wall -Werror -Wfatal-errors -Wpedantic -Wextra -Wmissing-include-dirs -Wconversion -Wsign-conversion -pthread -std=gnu++17 -o CMakeFiles/rest_test.dir/rest_test.cc.o -c /home/edison/Coding/ftx_cpp/src/example/rest_test.cc",
-  "file": "/home/edison/Coding/ftx_cpp/src/example/rest_test.cc"
 }
 ]

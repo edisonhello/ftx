@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util/WS.h"
+#include "util/ordered_pool.hpp"
 #include <external/json.hpp>
 #include <string>
 #include <vector>
@@ -33,7 +34,8 @@ class WSClient
     void set_keys(const std::string api_key, const std::string api_secret, const std::string subaccount_name = "");
     void configure();
 
-    void on_message(util::WS::OnMessageCB cb);
+    int on_message(util::WS::OnMessageCB cb);
+    bool remove_message_callback(int cb_id);
     void connect();
     std::vector<json> on_open();
 
@@ -59,6 +61,7 @@ class WSClient
     std::string subaccount_name = "";
 
     std::set<std::pair<std::string, std::string>> subscription_set;
+    util::ordered_pool<util::WS::OnMessageCB> on_message_callbacks;
 
     bool configured = false;
 

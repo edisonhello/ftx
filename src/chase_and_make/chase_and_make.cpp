@@ -1,5 +1,6 @@
 
 #include <future>
+#include <mutex>
 
 #include "chase_and_make/chase_and_make.hpp"
 #include "rest/client.h"
@@ -12,7 +13,7 @@ ChaseAndMake::ChaseAndMake(const string api_key, const string api_secret,
     : ws(api_key, api_secret, subaccount_name),
       rest(api_key, api_secret, subaccount_name) {
 
-  ws.on_message([](json j) { std::cout << "recv: " << j << std::endl; });
+  // ws.on_message([](json j) { std::cout << "recv: " << j << std::endl; });
   ws.connect();
 }
 
@@ -20,11 +21,12 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
                                float_50 amount, bool return_at_partial_fill) {
   while (amount > 0) {
 
-    std::shared_ptr<std::promise<ftx::Ticker>> ticker_promise = get_ticker(pair);
-    std::future<ftx::Ticker> ticker_future = ticker_promise->get_future();
+    // std::shared_ptr<std::promise<ftx::Ticker>> ticker_promise = get_ticker(pair);
+    // std::future<ftx::Ticker> ticker_future = ticker_promise->get_future();
+    std::future<ftx::Ticker> ticker_future = get_ticker(pair);
 
     float_50 previous_price = 0;
-    ftx::Order previous_order;
+    ftx::Order previous_order{};
 
     while (true) {
       std::cout << "start wait for future" << std::endl;
@@ -43,24 +45,29 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
         }
 
         if (this_price != previous_price) {
-          json cancel_result =
-              rest.cancel_order(std::to_string(previous_order.id));
-          ftx::Order canceled_order =
-              rest.get_order_status(std::to_string(previous_order.id));
+          if (previous_order.id) {
+            json cancel_result =
+                rest.cancel_order(std::to_string(previous_order.id));
+            ftx::Order canceled_order =
+                rest.get_order_status(std::to_string(previous_order.id));
 
-          amount -= canceled_order.filled_size;
+            amount -= canceled_order.filled_size;
 
-          if (return_at_partial_fill) {
-            return {canceled_order.filled_size, canceled_order.avg_fill_price};
+            if (return_at_partial_fill) {
+              return {canceled_order.filled_size, canceled_order.avg_fill_price};
+            }
           }
 
           ftx::Order order =
               rest.place_order(pair, side, this_price.convert_to<double>(),
                                amount.convert_to<double>());
+
+          previous_order = order;
         }
 
-        ticker_promise = get_ticker(pair);
-        ticker_future = ticker_promise->get_future();
+        // ticker_promise = get_ticker(pair);
+        // ticker_future = ticker_promise->get_future();
+        ticker_future = get_ticker(pair);
       }
     }
   }
@@ -69,21 +76,36 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
   // TODO: ws listen on fill
 }
 
-std::shared_ptr<std::promise<ftx::Ticker>> ChaseAndMake::get_ticker(const std::string pair) {
-  ws.subscribe_ticker(pair);
+std::future<ftx::Ticker> ChaseAndMake::get_ticker(const std::string pair) {
+  std::packaged_task<ftx::Ticker()> task([this, pair]() {
+    ws.subscribe_ticker(pair);
 
-  std::shared_ptr<std::promise<ftx::Ticker>> promise(new std::promise<ftx::Ticker>());
+    std::promise<ftx::Ticker> promise;
+    std::mutex mutex;
+    bool is_set = false;
 
-  ws.on_message([pair, &promise] (json j) {
-    std::cout << "ws on message " << j.dump() << std::endl;
-    if (j["type"].get<std::string>() == "subscribed") return;
-    if (j["channel"].get<std::string>() == "ticker" && j["market"].get<std::string>() == pair) {
-      std::cout << "set value" << std::endl;
-      promise->set_value(j);
-    }
+    int cb_id = ws.on_message([this, pair, &promise, &mutex, &is_set, &cb_id] (json j) {
+      std::cout << "ws on message " << j.dump() << std::endl;
+      if (j["type"].get<std::string>() == "subscribed") return;
+      if (j["channel"].get<std::string>() == "ticker" && j["market"].get<std::string>() == pair) {
+        std::lock_guard<std::mutex> _lg(mutex);
+
+        if (!is_set) {
+          std::cout << "set value" << std::endl;
+          is_set = true;
+          promise.set_value(j);
+
+          ws.remove_message_callback(cb_id);
+        }
+      }
+    });
+
+    return promise.get_future().get();
   });
 
-  return promise;
+  task();
+
+  return task.get_future();
 }
 
 } // namespace chase_and_make

@@ -99,7 +99,9 @@ Order RESTClient::place_order(const std::string market,
                     {"postOnly", post_only},
                     {"reduceOnly", reduce_only}};
     auto response = http_client.post("orders", payload.dump());
-    return json::parse(response.body());
+    json result = json::parse(response.body());
+    throw_error_if_error(result);
+    return result;
 }
 
 Order RESTClient::place_order(const std::string market,
@@ -118,11 +120,14 @@ Order RESTClient::place_order(const std::string market,
                     {"postOnly", post_only},
                     {"reduceOnly", reduce_only}};
     auto response = http_client.post("orders", payload.dump());
-    return json::parse(response.body());
+    json result = json::parse(response.body());
+    throw_error_if_error(result);
+    return result;
 }
 
 Order RESTClient::get_order_status(const std::string order_id) {
     auto response = http_client.get("orders/" + order_id);
+    std::cout << "get " << response.body() << std::endl;
     return json::parse(response.body());
 }
 

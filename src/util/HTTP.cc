@@ -8,6 +8,8 @@
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/beast/version.hpp>
 
+#include <iostream>
+
 #undef string_to_hex // avoid define pollusion to OPENSSL_hexstr2buf
 
 namespace ssl = boost::asio::ssl;
@@ -28,6 +30,7 @@ void HTTPSession::configure(std::string _uri,
 
 http::response<http::string_body> HTTPSession::get(const std::string target)
 {
+    std::cout << "get" << std::endl;
     std::string endpoint = "/api/" + target;
     http::request<http::string_body> req{http::verb::get, endpoint, 11};
     return request(req);
@@ -36,6 +39,7 @@ http::response<http::string_body> HTTPSession::get(const std::string target)
 http::response<http::string_body> HTTPSession::post(const std::string target,
                                                     const std::string payload)
 {
+    std::cout << "post" << std::endl;
     std::string endpoint = "/api/" + target;
     http::request<http::string_body> req{http::verb::post, endpoint, 11};
     req.body() = payload;
@@ -45,6 +49,7 @@ http::response<http::string_body> HTTPSession::post(const std::string target,
 
 http::response<http::string_body> HTTPSession::delete_(const std::string target)
 {
+    std::cout << "delete" << std::endl;
     std::string endpoint = "/api/" + target;
     http::request<http::string_body> req{http::verb::delete_, endpoint, 11};
     return request(req);
@@ -107,9 +112,16 @@ void HTTPSession::authenticate(http::request<http::string_body>& req)
     if (!body.empty()) {
         data += body;
     }
+
+    // data = "1588591511721GET/api/markets";
+    // api_secret = "T4lPid48QtjNxjLUFOcUZghD7CUJ7sTVsfuvQZF2";
+
     std::string hmacced = encoding::hmac(std::string(api_secret), data, 32);
     std::string sign =
       encoding::string_to_hex((unsigned char*)hmacced.c_str(), 32);
+
+    std::cout << "key " << api_key << " secret " << api_secret << std::endl;
+    std::cout << "auth " << data << " hmac " << hmacced << " sign " << sign << std::endl;
 
     req.set("FTX-KEY", api_key);
     req.set("FTX-TS", std::to_string(ts));

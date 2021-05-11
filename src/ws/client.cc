@@ -44,12 +44,21 @@ void WSClient::set_keys(const std::string api_key, const std::string api_secret,
 void WSClient::configure() {
   ws.configure(uri, api_key, api_secret, subaccount_name);
   ws.set_on_open_cb([this]() { return this->on_open(); });
+  ws.set_on_message_cb([this] (json j) {
+    for (auto &[_, cb] : on_message_callbacks) {
+      std::thread(cb, j).detach();
+    }
+  });
 
   configured = true;
 }
 
-void WSClient::on_message(util::WS::OnMessageCB cb) {
-  ws.set_on_message_cb(cb);
+int WSClient::on_message(util::WS::OnMessageCB cb) {
+  return on_message_callbacks.insert(cb);
+}
+
+bool WSClient::remove_message_callback(int cb_id) {
+  return on_message_callbacks.remove(cb_id);
 }
 
 void WSClient::connect() { ws.connect(); }
