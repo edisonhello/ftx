@@ -7,7 +7,7 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
 using json = nlohmann::json;
-using boost::multiprecision::cpp_dec_float_50;
+using float50 = boost::multiprecision::cpp_dec_float_50;
 
 namespace util {
 

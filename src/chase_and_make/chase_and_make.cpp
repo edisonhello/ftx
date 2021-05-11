@@ -7,32 +7,39 @@
 
 namespace chase_and_make {
 
-ChaseAndMake::ChaseAndMake(const string api_key, const string api_secret, const string subaccount_name) {
-  ws.set_keys(api_key, api_secret, subaccount_name);
-  rest.set_keys(api_key, api_secret, subaccount_name);
+ChaseAndMake::ChaseAndMake(const string api_key, const string api_secret,
+                           const string subaccount_name)
+    : ws(api_key, api_secret, subaccount_name),
+      rest(api_key, api_secret, subaccount_name) {
+
+  ws.on_message([](json j) { std::cout << "recv: " << j << std::endl; });
+  ws.connect();
 }
 
-OrderResult ChaseAndMake::make(const string pair, const string side, float_50 amount, bool return_at_partial_fill) {
+OrderResult ChaseAndMake::make(const string pair, const string side,
+                               float_50 amount, bool return_at_partial_fill) {
   while (amount > 0) {
 
-    std::future<ftx::Ticker> ticker_future =
-        std::async(std::launch::async,
-                   [this, pair]() -> ftx::Ticker { return get_ticker(pair); });
+    std::shared_ptr<std::promise<ftx::Ticker>> ticker_promise = get_ticker(pair);
+    std::future<ftx::Ticker> ticker_future = ticker_promise->get_future();
 
     float_50 previous_price = 0;
     ftx::Order previous_order;
 
     while (true) {
+      std::cout << "start wait for future" << std::endl;
       if (std::future_status status =
-              ticker_future.wait_for(std::chrono::seconds(0));
+              ticker_future.wait_for(std::chrono::seconds(1));
           status == std::future_status::ready) {
+        std::cout << "trying to get value" << std::endl;
+
         ftx::Ticker ticker = ticker_future.get();
 
         float_50 this_price;
         if (side == "buy") {
-          this_price = ticker.bid;
+          this_price = ticker.data.bid;
         } else {
-          this_price = ticker.ask;
+          this_price = ticker.data.ask;
         }
 
         if (this_price != previous_price) {
@@ -52,10 +59,8 @@ OrderResult ChaseAndMake::make(const string pair, const string side, float_50 am
                                amount.convert_to<double>());
         }
 
-        ticker_future =
-            std::async(std::launch::async, [this, pair]() -> ftx::Ticker {
-              return get_ticker(pair);
-            });
+        ticker_promise = get_ticker(pair);
+        ticker_future = ticker_promise->get_future();
       }
     }
   }
@@ -64,8 +69,21 @@ OrderResult ChaseAndMake::make(const string pair, const string side, float_50 am
   // TODO: ws listen on fill
 }
 
-// ftx::Ticker ChaseAndMake::get_ticker(const std::string pair) {
-//   ws.subscribe_ticker(pair);
-// }
-  
+std::shared_ptr<std::promise<ftx::Ticker>> ChaseAndMake::get_ticker(const std::string pair) {
+  ws.subscribe_ticker(pair);
+
+  std::shared_ptr<std::promise<ftx::Ticker>> promise(new std::promise<ftx::Ticker>());
+
+  ws.on_message([pair, &promise] (json j) {
+    std::cout << "ws on message " << j.dump() << std::endl;
+    if (j["type"].get<std::string>() == "subscribed") return;
+    if (j["channel"].get<std::string>() == "ticker" && j["market"].get<std::string>() == pair) {
+      std::cout << "set value" << std::endl;
+      promise->set_value(j);
+    }
+  });
+
+  return promise;
 }
+
+} // namespace chase_and_make

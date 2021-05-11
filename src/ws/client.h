@@ -11,8 +11,17 @@ namespace ftx {
 
 struct Ticker {
   std::string market;
-  cpp_dec_float_50 bid, ask, bid_size, ask_size, last;
-  double time;
+  struct {
+    float50 bid;
+    float50 ask;
+    float50 bid_size;
+    float50 ask_size;
+    float50 last;
+    double time;
+  } data;
+
+  Ticker() = default;
+  Ticker(json j);
 };
 
 class WSClient
@@ -49,10 +58,15 @@ class WSClient
     std::string api_secret = "";
     std::string subaccount_name = "";
 
+    std::set<std::pair<std::string, std::string>> subscription_set;
+
     bool configured = false;
 
     json get_subscription_message(std::string market, std::string channel);
     json get_unsubscription_message(std::string market, std::string channel);
+
+    void subscribe(std::string market, std::string channel);
+    void unsubscribe(std::string market, std::string channel);
 
     void send_message(json j);
 };

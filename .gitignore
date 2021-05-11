@@ -6,3 +6,4 @@ bin
 .cache
 Makefile
 *.cmake
+build-debug

@@ -1,13 +1,25 @@
 
 #include <utility>
 
-#include "ws/client.h"
 #include "util/Encoding.h"
 #include "util/Time.h"
+#include "ws/client.h"
+
+#undef string_to_hex // avoid define pollusion to OPENSSL_hexstr2buf
 
 namespace encoding = util::encoding;
 
 namespace ftx {
+
+Ticker::Ticker(json j) : market(j["market"]) {
+  json jj = j["data"];
+  data.bid = float50(jj["bid"].get<double>());
+  data.ask = float50(jj["ask"].get<double>());
+  data.bid_size = float50(jj["bidSize"].get<double>());
+  data.ask_size = float50(jj["askSize"].get<double>());
+  data.last = float50(jj["last"].get<double>());
+  data.time = jj["time"].get<double>();
+}
 
 WSClient::WSClient() {
   if (!api_key.empty()) {
@@ -43,12 +55,9 @@ void WSClient::on_message(util::WS::OnMessageCB cb) {
 void WSClient::connect() { ws.connect(); }
 
 std::vector<json> WSClient::on_open() {
-  std::cout << "1" << std::endl;
   std::vector<json> msgs;
-  std::cout << "1" << std::endl;
 
   if (!(api_key.empty() || api_secret.empty())) {
-      std::cout << "login msg" << std::endl;
     long ts = util::get_ms_timestamp(util::current_time()).count();
     std::string data = std::to_string(ts) + "websocket_login";
     std::string hmacced = encoding::hmac(std::string(api_secret), data, 32);
@@ -60,59 +69,68 @@ std::vector<json> WSClient::on_open() {
       msg.push_back({"subaccount", subaccount_name});
     }
     msgs.push_back(msg);
-
   }
-  std::cout << "3" << std::endl;
-
-  msgs.push_back(get_subscription_message("BTC-PERP", "orders"));
 
   return msgs;
 }
 
 void WSClient::subscribe_orders(std::string market) {
-    send_message(get_subscription_message(market, "orders"));
+  subscribe(market, "orders");
 }
 
 void WSClient::subscribe_orderbook(std::string market) {
-    send_message(get_subscription_message(market, "orderbook"));
+  subscribe(market, "orderbook");
 }
 
 void WSClient::subscribe_fills(std::string market) {
-    send_message(get_subscription_message(market, "fills"));
+  subscribe(market, "fills");
 }
 
 void WSClient::subscribe_trades(std::string market) {
-    send_message(get_subscription_message(market, "trades"));
+  subscribe(market, "trades");
 }
 
 void WSClient::subscribe_ticker(std::string market) {
-    send_message(get_subscription_message(market, "ticker"));
+  subscribe(market, "ticker");
+}
+
+void WSClient::subscribe(std::string market, std::string channel) {
+  auto pair = std::make_pair(market, channel);
+  if (subscription_set.count(pair))
+    return;
+  send_message(get_subscription_message(market, channel));
+  subscription_set.insert(pair);
 }
 
 void WSClient::unsubscribe_orders(std::string market) {
-    send_message(get_unsubscription_message(market, "orders"));
+  unsubscribe(market, "orders");
 }
 
 void WSClient::unsubscribe_orderbook(std::string market) {
-    send_message(get_unsubscription_message(market, "orderbook"));
+  unsubscribe(market, "orderbook");
 }
 
 void WSClient::unsubscribe_fills(std::string market) {
-    send_message(get_unsubscription_message(market, "fills"));
+  unsubscribe(market, "fills");
 }
 
 void WSClient::unsubscribe_trades(std::string market) {
-    send_message(get_unsubscription_message(market, "trades"));
+  unsubscribe(market, "trades");
 }
 
 void WSClient::unsubscribe_ticker(std::string market) {
-    send_message(get_unsubscription_message(market, "ticker"));
+  unsubscribe(market, "ticker");
 }
-// TODO: remove these repeat shits
 
-void WSClient::send_message(json j) {
-    ws.send_message(j.dump());
+void WSClient::unsubscribe(std::string market, std::string channel) {
+  auto pair = std::make_pair(market, channel);
+  if (!subscription_set.count(pair))
+    return;
+  send_message(get_unsubscription_message(market, "orders"));
+  subscription_set.erase(pair);
 }
+
+void WSClient::send_message(json j) { ws.send_message(j.dump()); }
 
 json WSClient::get_subscription_message(std::string market,
                                         std::string channel) {
@@ -120,7 +138,7 @@ json WSClient::get_subscription_message(std::string market,
 }
 
 json WSClient::get_unsubscription_message(std::string market,
-                                        std::string channel) {
+                                          std::string channel) {
   return {{"op", "unsubscribe"}, {"channel", channel}, {"market", market}};
 }
 

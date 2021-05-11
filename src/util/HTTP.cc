@@ -8,6 +8,8 @@
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/beast/version.hpp>
 
+#undef string_to_hex // avoid define pollusion to OPENSSL_hexstr2buf
+
 namespace ssl = boost::asio::ssl;
 using tcp = net::ip::tcp;
 
@@ -93,7 +95,6 @@ http::response<http::string_body> HTTPSession::request(
     return response;
 }
 
-#undef string_to_hex // avoid define pollusion to OPENSSL_hexstr2buf
 void HTTPSession::authenticate(http::request<http::string_body>& req)
 {
 

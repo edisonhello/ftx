@@ -1,8 +1,12 @@
 
+#include <iostream>
+
+#include "chase_and_make/chase_and_make.hpp"
 #include "rest/client.h"
 #include "ws/client.h"
 #include "util/env.h"
 #include <external/json.hpp>
+#include <thread>
 
 using json = nlohmann::json;
 using Env = util::env::Env;
@@ -12,54 +16,17 @@ using namespace ftx;
 
 Env env;
 
-#include <iostream>
-
 int main() {
   string api_key = env["API_KEY"];
   string api_secret = env["API_SECRET"];
   string subaccount = env["SUBACCOUNT"];
   
-  RESTClient rest(api_key, api_secret, subaccount);
-  WSClient ws(api_key, api_secret, subaccount);
-  
-  ws.subscribe_ticker("BTC-PERP");
-  ws.subscribe_ticker("BTC-1231");
-  ws.subscribe_ticker("BTC-0624");
-  ws.subscribe_ticker("ETH-PERP");
-  ws.subscribe_ticker("ETH-1231");
-  ws.subscribe_ticker("ETH-0624");
+  chase_and_make::ChaseAndMake cnm(api_key, api_secret, subaccount);
 
-  ws.on_message([] (json j) {
-    cout << "msg: " << j << endl;
-  });
+  std::this_thread::sleep_for(std::chrono::seconds(3));
 
-  ws.connect();
+  auto res = cnm.make("ETH-PERP", "buy", float50("0.001"));
   
-  // auto futs = client.list_futures();
-  // std::cout << futs << "\n";
-  
-  // auto markets = client.list_futures();
-  // std::cout << markets << "\n";
-  
-  // auto ob = client.get_orderbook("BTC-PERP", 3);
-  // std::cout << ob << "\n\n";
-  
-  // auto acct = client.get_account_info();
-  // std::cout << acct << "\n\n";
-  
-  // auto ord = client.place_order("BTC-PERP", "buy", 10, 0.01);
-  // std::cout << ord << "\n\n";
+  std::cout << res.size << ' ' << res.price << std::endl;
+
 }
-
-
-
-// int main()
-// {
-//     client.subscribe_orders("BTC-PERP");
-//     client.subscribe_orderbook("BTC-PERP");
-//     client.subscribe_ticker("BTC-PERP");
-
-//     client.on_message([](json j) { std::cout << "msg: " << j << "\n"; });
-
-//     client.connect();
-// }

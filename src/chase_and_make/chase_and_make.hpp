@@ -30,7 +30,7 @@ class ChaseAndMake {
   ftx::WSClient ws;
   ftx::RESTClient rest;
 
-  ftx::Ticker get_ticker(const string pair);
+  std::shared_ptr<std::promise<ftx::Ticker>> get_ticker(const string pair);
 };
 
 } // namespace chase_and_make
