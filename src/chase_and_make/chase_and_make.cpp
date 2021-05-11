@@ -6,6 +6,10 @@
 #include "rest/client.h"
 #include "ws/client.h"
 
+const bool Verbose = true;
+
+#define log Verbose && std::cout
+
 namespace chase_and_make {
 
 ChaseAndMake::ChaseAndMake(const string api_key, const string api_secret,
@@ -21,19 +25,15 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
                                float_50 amount, bool return_at_partial_fill) {
   while (amount > 0) {
 
-    // std::shared_ptr<std::promise<ftx::Ticker>> ticker_promise = get_ticker(pair);
-    // std::future<ftx::Ticker> ticker_future = ticker_promise->get_future();
     std::future<ftx::Ticker> ticker_future = get_ticker(pair);
 
     float_50 previous_price = 0;
     ftx::Order previous_order{};
 
     while (true) {
-      std::cout << "start wait for future" << std::endl;
       if (std::future_status status =
               ticker_future.wait_for(std::chrono::seconds(1));
           status == std::future_status::ready) {
-        std::cout << "trying to get value" << std::endl;
 
         ftx::Ticker ticker = ticker_future.get();
 
@@ -46,6 +46,8 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
 
         if (this_price != previous_price) {
           if (previous_order.id) {
+            log << "cancel previous order" << std::endl;
+
             json cancel_result =
                 rest.cancel_order(std::to_string(previous_order.id));
             ftx::Order canceled_order =
@@ -53,24 +55,32 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
 
             amount -= canceled_order.filled_size;
 
-            if (return_at_partial_fill) {
-              return {canceled_order.filled_size, canceled_order.avg_fill_price};
+            if (canceled_order.filled_size) {
+              log << "partial filled " << canceled_order.filled_size << " at "
+                  << canceled_order.avg_fill_price << std::endl;
+
+              if (return_at_partial_fill) {
+                return {canceled_order.filled_size,
+                        canceled_order.avg_fill_price};
+              }
             }
+
           }
 
           ftx::Order order =
               rest.place_order(pair, side, this_price.convert_to<double>(),
                                amount.convert_to<double>());
 
+          log << "place new order with size " << amount << " at " << this_price << std::endl;
+
           previous_order = order;
         }
 
-        // ticker_promise = get_ticker(pair);
-        // ticker_future = ticker_promise->get_future();
         ticker_future = get_ticker(pair);
       }
     }
   }
+  // TODO: change this;
   return {0, 0};
 
   // TODO: ws listen on fill
@@ -85,13 +95,11 @@ std::future<ftx::Ticker> ChaseAndMake::get_ticker(const std::string pair) {
     bool is_set = false;
 
     int cb_id = ws.on_message([this, pair, &promise, &mutex, &is_set, &cb_id] (json j) {
-      std::cout << "ws on message " << j.dump() << std::endl;
       if (j["type"].get<std::string>() == "subscribed") return;
       if (j["channel"].get<std::string>() == "ticker" && j["market"].get<std::string>() == pair) {
         std::lock_guard<std::mutex> _lg(mutex);
 
         if (!is_set) {
-          std::cout << "set value" << std::endl;
           is_set = true;
           promise.set_value(j);
 
@@ -106,6 +114,7 @@ std::future<ftx::Ticker> ChaseAndMake::get_ticker(const std::string pair) {
   task();
 
   return task.get_future();
+  // TODO: maybe we dont need packaged task here
 }
 
 } // namespace chase_and_make

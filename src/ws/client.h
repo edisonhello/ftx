@@ -10,20 +10,6 @@ using json = nlohmann::json;
 
 namespace ftx {
 
-struct Ticker {
-  std::string market;
-  struct {
-    float50 bid;
-    float50 ask;
-    float50 bid_size;
-    float50 ask_size;
-    float50 last;
-    double time;
-  } data;
-
-  Ticker() = default;
-  Ticker(json j);
-};
 
 class WSClient
 {
@@ -61,7 +47,9 @@ class WSClient
     std::string subaccount_name = "";
 
     std::set<std::pair<std::string, std::string>> subscription_set;
+
     util::ordered_pool<util::WS::OnMessageCB> on_message_callbacks;
+    std::mutex on_message_callbacks_lock;
 
     bool configured = false;
 

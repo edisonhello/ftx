@@ -65,6 +65,7 @@ void WS::connect() {
 }
 
 void WS::send_message(const std::string message) {
+  std::cout << "ws send " << message << std::endl;
   wsclient.send(hdl, message, websocketpp::frame::opcode::text);
 }
 

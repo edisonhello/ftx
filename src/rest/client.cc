@@ -2,24 +2,6 @@
 
 namespace ftx {
 
-Order::Order(json j)
-    : id(j["id"]), market(j["market"]), type(j["type"]), side(j["side"]),
-      price(j["price"].get<std::string>()), size(j["size"].get<std::string>()),
-      filled_size(j["filledSize"].get<std::string>()),
-      remaining_size(j["remainingSize"].get<std::string>()),
-      avg_fill_price(j["avgFillPrice"].get<std::string>()),
-      created_at(j["createdAt"].get<std::string>()),
-      reduce_only(j["reduceOnly"].get<bool>()), ioc(j["ioc"].get<bool>()),
-      post_only(j["postOnly"].get<bool>()),
-      clientid(j["clientid"].get<bool>()) {
-  std::string strStatus = j["status"];
-  if (strStatus == "new")
-    status = OrderStatus::_new;
-  if (strStatus == "open")
-    status = OrderStatus::opened;
-  if (strStatus == "closed")
-    status = OrderStatus::closed;
-}
 
 RESTClient::RESTClient()
 {
@@ -100,7 +82,8 @@ Order RESTClient::place_order(const std::string market,
                     {"reduceOnly", reduce_only}};
     auto response = http_client.post("orders", payload.dump());
     json result = json::parse(response.body());
-    throw_error_if_error(result);
+    throw_ftx_exception_if_error(result);
+    std::cout << "result " << result << std::endl;
     return result;
 }
 
@@ -121,14 +104,15 @@ Order RESTClient::place_order(const std::string market,
                     {"reduceOnly", reduce_only}};
     auto response = http_client.post("orders", payload.dump());
     json result = json::parse(response.body());
-    throw_error_if_error(result);
+    throw_ftx_exception_if_error(result);
     return result;
 }
 
 Order RESTClient::get_order_status(const std::string order_id) {
     auto response = http_client.get("orders/" + order_id);
-    std::cout << "get " << response.body() << std::endl;
-    return json::parse(response.body());
+    json result = json::parse(response.body());
+    throw_ftx_exception_if_error(result);
+    return result;
 }
 
 json RESTClient::cancel_order(const std::string order_id)

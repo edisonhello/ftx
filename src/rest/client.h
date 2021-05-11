@@ -6,40 +6,11 @@
 
 #include <external/json.hpp>
 #include "util/HTTP.h"
+#include "util/ftx.hpp"
 
 using json = nlohmann::json;
-using float50 = boost::multiprecision::cpp_dec_float_50;
-using string = std::string;
 
 namespace ftx {
-
-enum OrderStatus {
-  _new,
-  opened,
-  closed,
-};
-
-struct Order {
-  int id;
-  string market;
-  string type;
-  string side;
-  float50 price;
-  float50 size;
-  float50 filled_size;
-  float50 remaining_size;
-  float50 avg_fill_price;
-  OrderStatus status;
-  string created_at;
-  bool reduce_only;
-  bool ioc;
-  bool post_only;
-  bool clientid;
-
-  Order() = default;
-  Order(json j);
-};
-
 
 class RESTClient
 {

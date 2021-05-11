@@ -23,9 +23,9 @@ int main() {
   
   chase_and_make::ChaseAndMake cnm(api_key, api_secret, subaccount);
 
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
-  auto res = cnm.make("ETH-PERP", "buy", float50("0.001"));
+  auto res = cnm.make("ETH-PERP", "sell", float50("0.009"));
   
   std::cout << res.size << ' ' << res.price << std::endl;
 

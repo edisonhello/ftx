@@ -1,8 +1,10 @@
 
+#include <mutex>
 #include <utility>
 
 #include "util/Encoding.h"
 #include "util/Time.h"
+#include "util/ftx.hpp"
 #include "ws/client.h"
 
 #undef string_to_hex // avoid define pollusion to OPENSSL_hexstr2buf
@@ -10,16 +12,6 @@
 namespace encoding = util::encoding;
 
 namespace ftx {
-
-Ticker::Ticker(json j) : market(j["market"]) {
-  json jj = j["data"];
-  data.bid = float50(jj["bid"].get<double>());
-  data.ask = float50(jj["ask"].get<double>());
-  data.bid_size = float50(jj["bidSize"].get<double>());
-  data.ask_size = float50(jj["askSize"].get<double>());
-  data.last = float50(jj["last"].get<double>());
-  data.time = jj["time"].get<double>();
-}
 
 WSClient::WSClient() {
   if (!api_key.empty()) {
@@ -45,6 +37,9 @@ void WSClient::configure() {
   ws.configure(uri, api_key, api_secret, subaccount_name);
   ws.set_on_open_cb([this]() { return this->on_open(); });
   ws.set_on_message_cb([this] (json j) {
+    throw_ftx_exception_if_error(j);
+
+    std::lock_guard<std::mutex> _lg(on_message_callbacks_lock);
     for (auto &[_, cb] : on_message_callbacks) {
       std::thread(cb, j).detach();
     }
@@ -54,10 +49,12 @@ void WSClient::configure() {
 }
 
 int WSClient::on_message(util::WS::OnMessageCB cb) {
+  std::lock_guard<std::mutex> _lg(on_message_callbacks_lock);
   return on_message_callbacks.insert(cb);
 }
 
 bool WSClient::remove_message_callback(int cb_id) {
+  std::lock_guard<std::mutex> _lg(on_message_callbacks_lock);
   return on_message_callbacks.remove(cb_id);
 }
 
@@ -75,7 +72,7 @@ std::vector<json> WSClient::on_open() {
     json msg = {{"op", "login"},
                 {"args", {{"key", api_key}, {"sign", sign}, {"time", ts}}}};
     if (!subaccount_name.empty()) {
-      msg.push_back({"subaccount", subaccount_name});
+      msg["args"].push_back({"subaccount", subaccount_name});
     }
     msgs.push_back(msg);
   }
