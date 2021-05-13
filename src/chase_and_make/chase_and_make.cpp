@@ -70,6 +70,7 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
           ftx::Order order =
               rest.place_order(pair, side, this_price.convert_to<double>(),
                                amount.convert_to<double>());
+          previous_price = this_price;
 
           log << "place new order with size " << amount << " at " << this_price << std::endl;
 

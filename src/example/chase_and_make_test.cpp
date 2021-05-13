@@ -25,7 +25,7 @@ int main() {
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
-  auto res = cnm.make("ETH-PERP", "sell", float50("0.009"));
+  auto res = cnm.make("EOS-PERP", "buy", float50("55.3"), false);
   
   std::cout << res.size << ' ' << res.price << std::endl;
 

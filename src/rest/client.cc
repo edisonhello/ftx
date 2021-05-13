@@ -83,7 +83,6 @@ Order RESTClient::place_order(const std::string market,
     auto response = http_client.post("orders", payload.dump());
     json result = json::parse(response.body());
     throw_ftx_exception_if_error(result);
-    std::cout << "result " << result << std::endl;
     return result;
 }
 
