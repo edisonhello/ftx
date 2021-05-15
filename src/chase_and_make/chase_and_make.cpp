@@ -64,7 +64,6 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
                         canceled_order.avg_fill_price};
               }
             }
-
           }
 
           ftx::Order order =
@@ -72,7 +71,8 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
                                amount.convert_to<double>());
           previous_price = this_price;
 
-          log << "place new order with size " << amount << " at " << this_price << std::endl;
+          log << "place new order with size " << amount << " at " << this_price
+              << std::endl;
 
           previous_order = order;
         }
@@ -95,19 +95,22 @@ std::future<ftx::Ticker> ChaseAndMake::get_ticker(const std::string pair) {
     std::mutex mutex;
     bool is_set = false;
 
-    int cb_id = ws.on_message([this, pair, &promise, &mutex, &is_set, &cb_id] (json j) {
-      if (j["type"].get<std::string>() == "subscribed") return;
-      if (j["channel"].get<std::string>() == "ticker" && j["market"].get<std::string>() == pair) {
-        std::lock_guard<std::mutex> _lg(mutex);
+    int cb_id =
+        ws.on_message([this, pair, &promise, &mutex, &is_set, &cb_id](json j) {
+          if (j["type"].get<std::string>() == "subscribed")
+            return;
+          if (j["channel"].get<std::string>() == "ticker" &&
+              j["market"].get<std::string>() == pair) {
+            std::lock_guard<std::mutex> _lg(mutex);
 
-        if (!is_set) {
-          is_set = true;
-          promise.set_value(j);
+            if (!is_set) {
+              is_set = true;
+              promise.set_value(j);
 
-          ws.remove_message_callback(cb_id);
-        }
-      }
-    });
+              ws.remove_message_callback(cb_id);
+            }
+          }
+        });
 
     return promise.get_future().get();
   });
