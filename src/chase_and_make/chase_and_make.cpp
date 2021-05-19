@@ -23,8 +23,10 @@ ChaseAndMake::ChaseAndMake(const string api_key, const string api_secret,
 
 OrderResult ChaseAndMake::make(const string pair, const string side,
                                float_50 amount, bool return_at_partial_fill) {
-  while (amount > 0) {
+  float_50 avg_fill_price = 0;
+  float_50 filled_amount = 0;
 
+  while (amount > 0) {
     std::future<ftx::Ticker> ticker_future = get_ticker(pair);
 
     float_50 previous_price = 0;
@@ -54,6 +56,7 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
                 rest.get_order_status(std::to_string(previous_order.id));
 
             amount -= canceled_order.filled_size;
+            avg_fill_price += canceled_order.filled_size * canceled_order.avg_fill_price;
 
             if (canceled_order.filled_size) {
               log << "partial filled " << canceled_order.filled_size << " at "
@@ -68,7 +71,7 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
 
           ftx::Order order =
               rest.place_order(pair, side, this_price.convert_to<double>(),
-                               amount.convert_to<double>());
+                               amount.convert_to<double>(), false, true, false);
           previous_price = this_price;
 
           log << "place new order with size " << amount << " at " << this_price
@@ -81,8 +84,7 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
       }
     }
   }
-  // TODO: change this;
-  return {0, 0};
+  return {filled_amount, avg_fill_price / filled_amount};
 
   // TODO: ws listen on fill
 }
