@@ -39,6 +39,11 @@ json RESTClient::list_markets()
     return json::parse(response.body());
 }
 
+Market RESTClient::get_market(const std::string market) {
+  auto response = http_client.get("markets/" + market);
+  return json::parse(response.body())["result"];
+}
+
 json RESTClient::get_orderbook(const std::string market, int depth)
 {
     auto response =

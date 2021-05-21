@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Werror -Wfatal-errors -Wpedantic -Wextra -Wmissing-i
 add_compile_options(-Wall -Werror -Wfatal-errors -Wpedantic -Wextra -Wmissing-include-dirs -Wconversion -Wsign-conversion -pthread)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -march=native -g")
+set(CMAKE_CXX_FLAGS_STATIC "-static")
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -20,6 +21,7 @@ include_directories(SYSTEM src/external)
 add_subdirectory(src/rest)
 add_subdirectory(src/ws)
 add_subdirectory(src/util)
-add_subdirectory(src/chase_and_make)
+add_subdirectory(src/module)
+add_subdirectory(src/app)
 
 add_subdirectory(src/example)

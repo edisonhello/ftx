@@ -2,9 +2,10 @@
 #include <future>
 #include <mutex>
 
-#include "chase_and_make/chase_and_make.hpp"
 #include "rest/client.h"
 #include "ws/client.h"
+
+#include "./chase_and_make.hpp"
 
 const bool Verbose = true;
 
@@ -21,7 +22,7 @@ ChaseAndMake::ChaseAndMake(const string api_key, const string api_secret,
   ws.connect();
 }
 
-OrderResult ChaseAndMake::make(const string pair, const string side,
+ChaseAndMakeResult ChaseAndMake::make(const string pair, const string side,
                                float_50 amount, bool return_at_partial_fill) {
   float_50 avg_fill_price = 0;
   float_50 filled_amount = 0;
@@ -41,9 +42,9 @@ OrderResult ChaseAndMake::make(const string pair, const string side,
 
         float_50 this_price;
         if (side == "buy") {
-          this_price = ticker.data.bid;
+          this_price = ticker.bid;
         } else {
-          this_price = ticker.data.ask;
+          this_price = ticker.ask;
         }
 
         if (this_price != previous_price) {
@@ -107,7 +108,7 @@ std::future<ftx::Ticker> ChaseAndMake::get_ticker(const std::string pair) {
 
             if (!is_set) {
               is_set = true;
-              promise.set_value(j);
+              promise.set_value(j["data"]);
 
               ws.remove_message_callback(cb_id);
             }

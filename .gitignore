@@ -1,9 +1,10 @@
 *__pycache__*
 .idea*
-bin
 
 *CMakeFiles*
 .cache
 Makefile
 *.cmake
-build-debug
+
+build*
+bin*

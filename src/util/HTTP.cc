@@ -95,31 +95,29 @@ http::response<http::string_body> HTTPSession::request(
     return response;
 }
 
-void HTTPSession::authenticate(http::request<http::string_body>& req)
-{
+void HTTPSession::authenticate(http::request<http::string_body>& req) {
+  if (api_key.empty() || api_secret.empty()) return;
 
-    std::string method(req.method_string());
-    std::string path(req.target());
-    std::string body(req.body());
+  std::string method(req.method_string());
+  std::string path(req.target());
+  std::string body(req.body());
 
-    long ts = get_ms_timestamp(current_time()).count();
-    std::string data = std::to_string(ts) + method + path;
-    if (!body.empty()) {
-        data += body;
-    }
+  long ts = get_ms_timestamp(current_time()).count();
+  std::string data = std::to_string(ts) + method + path;
+  if (!body.empty()) {
+    data += body;
+  }
 
-    // data = "1588591511721GET/api/markets";
-    // api_secret = "T4lPid48QtjNxjLUFOcUZghD7CUJ7sTVsfuvQZF2";
-
-    std::string hmacced = encoding::hmac(std::string(api_secret), data, 32);
-    std::string sign =
+  std::string hmacced = encoding::hmac(std::string(api_secret), data, 32);
+  std::string sign =
       encoding::string_to_hex((unsigned char*)hmacced.c_str(), 32);
 
-    req.set("FTX-KEY", api_key);
-    req.set("FTX-TS", std::to_string(ts));
-    req.set("FTX-SIGN", sign);
-    if (!subaccount_name.empty()) {
-        req.set("FTX-SUBACCOUNT", subaccount_name);
-    }
+  req.set("FTX-KEY", api_key);
+  req.set("FTX-TS", std::to_string(ts));
+  req.set("FTX-SIGN", sign);
+  if (!subaccount_name.empty()) {
+    req.set("FTX-SUBACCOUNT", subaccount_name);
+  }
 }
+
 }

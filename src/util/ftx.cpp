@@ -1,5 +1,6 @@
 
 #include "util/ftx.hpp"
+
 #include <exception>
 #include <stdexcept>
 
@@ -21,25 +22,34 @@ Order::Order(json j)
       post_only(j["result"]["postOnly"].get<bool>()),
       clientid(safe_get<std::string>(j["result"]["clientid"], "")) {
   std::string strStatus = j["result"]["status"];
-  if (strStatus == "new")
-    status = OrderStatus::_new;
-  if (strStatus == "open")
-    status = OrderStatus::opened;
-  if (strStatus == "closed")
-    status = OrderStatus::closed;
+  if (strStatus == "new") status = OrderStatus::_new;
+  if (strStatus == "open") status = OrderStatus::opened;
+  if (strStatus == "closed") status = OrderStatus::closed;
 }
 
-Ticker::Ticker(json j) : market(j["market"]) {
-  json jj = j["data"];
-  data.bid = float50(jj["bid"].get<double>());
-  data.ask = float50(jj["ask"].get<double>());
-  data.bid_size = float50(jj["bidSize"].get<double>());
-  data.ask_size = float50(jj["askSize"].get<double>());
-  data.last = float50(jj["last"].get<double>());
-  data.time = jj["time"].get<double>();
-}
+Ticker::Ticker(json j)
+    : bid(j["bid"].get<double>()),
+      ask(j["ask"].get<double>()),
+      bid_size(j["bidSize"].get<double>()),
+      ask_size(j["askSize"].get<double>()),
+      last(j["last"].get<double>()),
+      time(j["time"].get<double>()) {}
 
+Market::Market(json j)
+    : name(j["name"].get<std::string>()),
+      underlying(safe_get<std::string>(j["underlying"], "")),
+      base_currency(safe_get<std::string>(j["baseCurrency"], "")),
+      quote_currency(safe_get<std::string>(j["quotaCurrency"], "")),
+      enabled(j["enabled"].get<bool>()),
+      ask(j["ask"].get<double>()),
+      bid(j["bid"].get<double>()),
+      last(j["last"].get<double>()),
+      post_only(j["postOnly"].get<bool>()),
+      price_increment(j["priceIncrement"].get<double>()),
+      size_increment(j["sizeIncrement"].get<double>()) {}
 
+ftx_error::ftx_error(std::string msg) : std::runtime_error(msg) {}
+action_error::action_error(std::string msg) : std::runtime_error(msg) {}
 
 void throw_ftx_exception_if_error(json j) {
   if (j["success"].is_boolean() && j["success"].get<bool>() == false) {
@@ -54,7 +64,42 @@ void throw_ftx_exception_if_error(json j) {
   }
 }
 
-ftx_error::ftx_error(std::string msg) : std::runtime_error(msg) {}
-action_error::action_error(std::string msg) : std::runtime_error(msg) {}
-
+float50 prev_size(const Market &market, float50 size) {
+  float50 _size = round_size(market, size);
+  if (_size >= size) _size -= market.size_increment;
+  return _size;
 }
+
+float50 round_size(const Market &market, float50 size) {
+  size /= market.size_increment;
+  size = round(size);
+  size *= market.size_increment;
+  return size;
+}
+
+float50 next_size(const Market &market, float50 size) {
+  float50 _size = round_size(market, size);
+  if (_size <= size) _size += market.size_increment;
+  return _size;
+}
+
+float50 prev_price(const Market &market, float50 price) {
+  float50 _price = round_price(market, price);
+  if (_price >= price) _price -= market.price_increment;
+  return _price;
+}
+
+float50 round_price(const Market &market, float50 price) {
+  price /= market.price_increment;
+  price = round(price);
+  price *= market.price_increment;
+  return price;
+}
+
+float50 next_price(const Market &market, float50 price) {
+  float50 _price = round_price(market, price);
+  if (_price <= price) _price += market.price_increment;
+  return _price;
+}
+
+}  // namespace ftx

@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-#include "chase_and_make/chase_and_make.hpp"
+#include "module/chase_and_make/chase_and_make.hpp"
 #include "rest/client.h"
 #include "ws/client.h"
 #include "util/env.h"
@@ -27,6 +27,6 @@ int main() {
 
   auto res = cnm.make("EOS-PERP", "buy", float50("55.3"), false);
   
-  std::cout << res.size << ' ' << res.price << std::endl;
+  std::cout << res.filled_size << ' ' << res.price << std::endl;
 
 }

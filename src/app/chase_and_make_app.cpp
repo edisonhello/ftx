@@ -1,12 +1,12 @@
 
-#include <iostream>
-
-#include "chase_and_make/chase_and_make.hpp"
-#include "rest/client.h"
-#include "ws/client.h"
-#include "util/env.h"
 #include <external/json.hpp>
+#include <iostream>
 #include <thread>
+
+#include "module/chase_and_make/chase_and_make.hpp"
+#include "rest/client.h"
+#include "util/env.h"
+#include "ws/client.h"
 
 using json = nlohmann::json;
 using Env = util::env::Env;
@@ -33,6 +33,8 @@ Config get_setting(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
+  auto [pair, side, size, ropf] = get_setting(argc, argv);
+
   string api_key = env["API_KEY"];
   string api_secret = env["API_SECRET"];
   string subaccount = env["SUBACCOUNT"];
@@ -41,10 +43,8 @@ int main(int argc, char **argv) {
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
-  auto [pair, side, size, ropf] = get_setting(argc, argv);
-
   auto res = cnm.make(pair, side, size, ropf);
 
-  std::cout << "Filled size: " << res.size << " avg fill price: " << res.price
-            << std::endl;
+  std::cout << "Filled size: " << res.filled_size
+            << " avg fill price: " << res.avg_fill_price << std::endl;
 }

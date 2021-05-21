@@ -1,10 +1,9 @@
 
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <exception>
+#include <external/json.hpp>
 #include <stdexcept>
 #include <string>
-
-#include <boost/multiprecision/cpp_dec_float.hpp>
-#include <external/json.hpp>
 
 #include "util/json.hpp"
 
@@ -40,20 +39,39 @@ struct Order {
   Order(json j);
 };
 
-
 struct Ticker {
-  std::string market;
-  struct {
-    float50 bid;
-    float50 ask;
-    float50 bid_size;
-    float50 ask_size;
-    float50 last;
-    double time;
-  } data;
+  float50 bid;
+  float50 ask;
+  float50 bid_size;
+  float50 ask_size;
+  float50 last;
+  double time;
 
   Ticker() = default;
   Ticker(json j);
+};
+
+enum MarketType {
+  future,
+  spot,
+};
+
+struct Market {
+  MarketType type;
+  std::string name;
+  std::string underlying;
+  std::string base_currency;
+  std::string quote_currency;
+  bool enabled;
+  float50 ask;
+  float50 bid;
+  float50 last;
+  bool post_only;
+  float50 price_increment;
+  float50 size_increment;
+
+  Market() = default;
+  Market(json j);
 };
 
 class ftx_error : public std::runtime_error {
@@ -68,4 +86,11 @@ class action_error : public std::runtime_error {
 
 void throw_ftx_exception_if_error(json j);
 
-} // namespace ftx
+float50 prev_size(const Market &market, float50 size);
+float50 round_size(const Market &market, float50 size);
+float50 next_size(const Market &market, float50 size);
+float50 prev_price(const Market &market, float50 price);
+float50 round_price(const Market &market, float50 price);
+float50 next_price(const Market &market, float50 price);
+
+}  // namespace ftx

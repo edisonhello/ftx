@@ -13,8 +13,8 @@ using float_50 = boost::multiprecision::cpp_dec_float_50;
 
 namespace chase_and_make {
 
-struct OrderResult {
-  float50 size, price;
+struct ChaseAndMakeResult {
+  float50 filled_size, avg_fill_price;
 };
 
 enum OrderSide {
@@ -25,7 +25,7 @@ class ChaseAndMake {
  public:
   ChaseAndMake(const string api_key, const string api_secret, const string subaccount_name);
 
-  OrderResult make(const string pair, const string side, float_50 amount, bool return_at_partial_fill = true);
+  ChaseAndMakeResult make(const string pair, const string side, float_50 amount, bool return_at_partial_fill = true);
  private:
   ftx::WSClient ws;
   ftx::RESTClient rest;
